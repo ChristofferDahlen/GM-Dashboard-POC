@@ -1,13 +1,13 @@
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { Peer } from 'peerjs'
 
 export function usePeer() {
   const myPeerId = ref('')
-  const connectionStatus = ref('disconnected')
-  const statusMessage = ref('Not connected')
-  const conn = ref(null)
+  const conns = ref([]) // array of active DataConnections
   const log = ref([])
   let peer = null
+
+  const connectedCount = computed(() => conns.value.length)
 
   function addLog(msg) {
     const time = new Date().toLocaleTimeString()
@@ -30,43 +30,33 @@ export function usePeer() {
   }
 
   function setupConn(c, onData) {
-    conn.value = c
-    connectionStatus.value = 'waiting'
-    statusMessage.value = 'Connecting...'
-
     c.on('open', () => {
-      connectionStatus.value = 'connected'
-      statusMessage.value = `Connected to ${c.peer}`
-      addLog(`Connected to ${c.peer}`)
+      conns.value.push(c)
+      addLog(`Connected: ${c.peer} (${conns.value.length} total)`)
     })
     c.on('data', data => {
-      addLog(`Received: ${data.type}`)
+      addLog(`Received from ${c.peer}: ${data.type}`)
       onData?.(data)
     })
     c.on('close', () => {
-      connectionStatus.value = 'disconnected'
-      statusMessage.value = 'Disconnected'
-      conn.value = null
-      addLog('Connection closed')
+      conns.value = conns.value.filter(x => x.peer !== c.peer)
+      addLog(`Disconnected: ${c.peer} (${conns.value.length} remaining)`)
     })
-  }
-
-  function connectTo(peerId, onData, onConnected) {
-    if (!peer || !peerId) return
-    const c = peer.connect(peerId)
-    setupConn(c, onData)
-    c.on('open', () => onConnected?.())
+    c.on('error', err => addLog(`Connection error (${c.peer}): ${err.message}`))
   }
 
   function send(data) {
-    if (conn.value && connectionStatus.value === 'connected') {
-      conn.value.send(data)
-    }
+    conns.value.forEach(c => c.send(data))
   }
 
-  function disconnect() {
-    conn.value?.close()
+  function sendTo(peerId, data) {
+    const c = conns.value.find(x => x.peer === peerId)
+    c?.send(data)
   }
 
-  return { myPeerId, connectionStatus, statusMessage, conn, log, init, connectTo, send, disconnect, addLog }
+  function disconnectAll() {
+    conns.value.forEach(c => c.close())
+  }
+
+  return { myPeerId, conns, connectedCount, log, init, send, sendTo, disconnectAll, addLog }
 }

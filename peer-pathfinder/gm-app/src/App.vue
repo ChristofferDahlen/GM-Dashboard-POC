@@ -1,25 +1,33 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { usePeer } from './composables/usePeer.js'
 import { msg, MessageType } from 'shared/src/protocol.js'
 import ConnectionPanel from './components/ConnectionPanel.vue'
 import AddCharacterPanel from './components/AddCharacterPanel.vue'
 import CharacterCard from './components/CharacterCard.vue'
 
-const { myPeerId, connectionStatus, statusMessage, log, init, connectTo, send, disconnect } = usePeer()
+const { myPeerId, conns, connectedCount, log, init, send, disconnectAll } = usePeer()
 
 const characters = ref([])
 
 const sorted = computed(() => [...characters.value].sort((a, b) => b.initiative - a.initiative))
 
 function handleData(data) {
-  // GM doesn't expect data from player in this flow, but handle gracefully
+  // GM doesn't expect data from players in this flow
 }
 
 onMounted(() => init(handleData))
 
+// Send full state to each newly connected player
+watch(conns, (newConns, oldConns) => {
+  if (newConns.length > (oldConns?.length ?? 0)) {
+    const newest = newConns[newConns.length - 1]
+    newest.send(msg.fullSync(characters.value.map(c => ({ ...c }))))
+  }
+}, { deep: true })
+
 function onConnect(peerId) {
-  connectTo(peerId, handleData, () => broadcastAll())
+  // GM only accepts incoming connections, this is now unused
 }
 
 function openPlayerApp() {
@@ -58,12 +66,10 @@ function broadcastAll() {
 
   <ConnectionPanel
     :myPeerId="myPeerId"
-    :connectionStatus="connectionStatus"
-    :statusMessage="statusMessage"
-    @connect="onConnect"
-    @disconnect="disconnect"
+    :connectedCount="connectedCount"
     @openPlayerApp="openPlayerApp"
     @broadcastAll="broadcastAll"
+    @disconnectAll="disconnectAll"
   />
 
   <AddCharacterPanel @add="addCharacter" />
