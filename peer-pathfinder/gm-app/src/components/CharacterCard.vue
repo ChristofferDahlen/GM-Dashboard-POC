@@ -1,8 +1,5 @@
 <script setup>
-const CONDITIONS = [
-  'Blinded', 'Confused', 'Dazzled', 'Deafened', 'Dying',
-  'Fatigued', 'Frightened', 'Paralyzed', 'Prone', 'Sickened', 'Stunned'
-]
+import { CONDITIONS } from 'shared/src/protocol.js'
 
 const props = defineProps({
   char: Object,

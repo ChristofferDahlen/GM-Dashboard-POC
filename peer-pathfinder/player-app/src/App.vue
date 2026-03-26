@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { usePeer } from './composables/usePeer.js'
+import { MessageType } from 'shared/src/protocol.js'
 import CharacterRow from './components/CharacterRow.vue'
 
 const { myPeerId, connectionStatus, statusMessage, log, init, connectTo, disconnect } = usePeer()
@@ -11,13 +12,13 @@ const gmPeerId = ref('')
 const sorted = computed(() => [...characters.value].sort((a, b) => b.initiative - a.initiative))
 
 function handleData(data) {
-  if (data.type === 'full_sync') {
+  if (data.type === MessageType.FULL_SYNC) {
     characters.value = data.characters
-  } else if (data.type === 'update') {
+  } else if (data.type === MessageType.UPDATE) {
     const idx = characters.value.findIndex(c => c.id === data.character.id)
     if (idx !== -1) characters.value[idx] = data.character
     else characters.value.push(data.character)
-  } else if (data.type === 'remove') {
+  } else if (data.type === MessageType.REMOVE) {
     characters.value = characters.value.filter(c => c.id !== data.id)
   }
 }

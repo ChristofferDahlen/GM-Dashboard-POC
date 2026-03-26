@@ -266,3 +266,79 @@ cd peer-pathfinder/player-app && npm run dev  # http://localhost:5174
 ```
 
 Open the GM app first, then click "Open Player App". If both are in the same browser the player connects automatically via localStorage.
+
+---
+
+## Shared protocol package
+
+The message format between the two apps is defined once in `shared/src/protocol.js` and imported by both. Neither app hardcodes message type strings or constructs message objects by hand.
+
+```
+peer-pathfinder/
+├── shared/
+│   └── src/
+│       └── protocol.js  ← single source of truth
+├── gm-app/
+└── player-app/
+```
+
+Both apps reference it as a local package dependency:
+
+```json
+"dependencies": {
+  "shared": "file:../shared"
+}
+```
+
+### What's in the protocol file
+
+```js
+// Message type constants — no magic strings anywhere else
+export const MessageType = {
+  FULL_SYNC: 'full_sync',
+  UPDATE:    'update',
+  REMOVE:    'remove',
+}
+
+// Factory functions — the only place message shapes are defined
+export const msg = {
+  fullSync: (characters) => ({ type: MessageType.FULL_SYNC, characters }),
+  update:   (character)  => ({ type: MessageType.UPDATE, character }),
+  remove:   (id)         => ({ type: MessageType.REMOVE, id }),
+}
+
+// Shared data — conditions list used by both GM and player
+export const CONDITIONS = [ 'Blinded', 'Confused', ... ]
+```
+
+### Sending (GM app)
+
+```js
+import { msg } from 'shared/src/protocol.js'
+
+send(msg.update(char))
+send(msg.remove(char.id))
+send(msg.fullSync(characters))
+```
+
+### Receiving (Player app)
+
+```js
+import { MessageType } from 'shared/src/protocol.js'
+
+if (data.type === MessageType.FULL_SYNC) { ... }
+if (data.type === MessageType.UPDATE)    { ... }
+if (data.type === MessageType.REMOVE)    { ... }
+```
+
+### Why this matters
+
+**One place to change.** If you rename a message type or add a new field, you update `protocol.js` and both apps stay in sync. There's no risk of the GM sending `"full_sync"` while the player listens for `"fullSync"` because of a typo in one of them.
+
+**The contract is explicit.** Anyone reading the codebase can open one file and understand every message that can flow between the two apps — its type, its shape, and what data it carries. Without this, you'd have to grep both codebases and mentally reconstruct the protocol.
+
+**Easier to extend.** Adding a new message type means adding one entry to `MessageType`, one factory function to `msg`, and one handler in the receiver. The structure guides you to do it consistently.
+
+**Prevents drift.** In a project where two separate apps communicate, it's easy for them to quietly diverge — one gets updated, the other doesn't. A shared package makes that drift visible immediately, either as a missing import or a broken build, rather than a silent runtime bug.
+
+**Documents intent.** The JSDoc `@typedef` for `Character` in the protocol file serves as the canonical definition of what a character object looks like. Both apps know exactly what fields to expect without having to infer it from usage.

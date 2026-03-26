@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { usePeer } from './composables/usePeer.js'
+import { msg, MessageType } from 'shared/src/protocol.js'
 import ConnectionPanel from './components/ConnectionPanel.vue'
 import AddCharacterPanel from './components/AddCharacterPanel.vue'
 import CharacterCard from './components/CharacterCard.vue'
@@ -33,22 +34,22 @@ function openPlayerApp() {
 function addCharacter(char) {
   const newChar = { id: Date.now(), ...char, conditions: [] }
   characters.value.push(newChar)
-  send({ type: 'update', character: { ...newChar } })
+  send(msg.update(newChar))
 }
 
 function updateCharacter(updated) {
   const idx = characters.value.findIndex(c => c.id === updated.id)
   if (idx !== -1) characters.value[idx] = updated
-  send({ type: 'update', character: { ...updated } })
+  send(msg.update(updated))
 }
 
 function removeCharacter(id) {
   characters.value = characters.value.filter(c => c.id !== id)
-  send({ type: 'remove', id })
+  send(msg.remove(id))
 }
 
 function broadcastAll() {
-  send({ type: 'full_sync', characters: characters.value.map(c => ({ ...c })) })
+  send(msg.fullSync(characters.value.map(c => ({ ...c }))))
 }
 </script>
 
