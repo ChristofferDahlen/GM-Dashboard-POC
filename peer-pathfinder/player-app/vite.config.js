@@ -3,7 +3,7 @@ import vue from '@vitejs/plugin-vue'
 
 export default defineConfig({
   plugins: [vue()],
-  base: '/player/',
+  base: '/GM-Dashboard-POC/player/',
   build: {
     outDir: '../../docs/player',
     emptyOutDir: true,

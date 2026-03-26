@@ -26,7 +26,7 @@ function openPlayerApp() {
   const isDev = window.location.port === '5173'
   const base = isDev
     ? `${window.location.protocol}//${window.location.hostname}:5174`
-    : `${window.location.origin}/player`
+    : `${window.location.origin}/GM-Dashboard-POC/player`
   window.open(`${base}/?gmPeerId=${myPeerId.value}`, '_blank')
 }
 
