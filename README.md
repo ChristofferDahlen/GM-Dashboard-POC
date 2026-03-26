@@ -35,7 +35,7 @@ Both apps create a `Peer` instance on load. This registers them with the signali
 ```js
 // gm-app/src/composables/usePeer.js
 import { Peer } from 'peerjs'
-
+ 
 const peer = new Peer()
 
 peer.on('open', id => {
@@ -60,15 +60,12 @@ peer.on('connection', incoming => {
 })
 ```
 
-`setupConn` attaches the event handlers that manage the connection lifecycle:
+`setupConn` attaches the event handlers that manage the connection lifecycle. Each connection is stored in a `conns` array so multiple players can be connected simultaneously:
 
 ```js
 function setupConn(c, onData) {
-  conn.value = c
-
   c.on('open', () => {
-    connectionStatus.value = 'connected'
-    // Connection is ready — broadcast current state to the new player
+    conns.value.push(c) // add to the pool, not replace
   })
 
   c.on('data', data => {
@@ -76,8 +73,7 @@ function setupConn(c, onData) {
   })
 
   c.on('close', () => {
-    connectionStatus.value = 'disconnected'
-    conn.value = null
+    conns.value = conns.value.filter(x => x.peer !== c.peer)
   })
 }
 ```
@@ -218,24 +214,68 @@ Because Vue's reactivity system is watching `characters`, the UI updates automat
 
 Both apps extract all PeerJS logic into a `usePeer` composable so the Vue components stay clean. The composable owns the `Peer` instance and exposes only what the component needs:
 
+### The `usePeer` composable
+
+Both apps extract all PeerJS logic into a `usePeer` composable so the Vue components stay clean.
+
+The GM version manages a pool of connections and exposes:
+
 ```js
 return {
-  myPeerId,        // ref<string> — this peer's ID
-  connectionStatus, // ref<'disconnected'|'waiting'|'connected'>
-  statusMessage,   // ref<string> — human-readable status
-  log,             // ref<string[]> — event log for debugging
-  init,            // (onData) => void — creates the Peer, starts listening
-  connectTo,       // (peerId, onData, onConnected?) => void
-  send,            // (data) => void — sends if connected, no-ops otherwise
-  disconnect,      // () => void
+  myPeerId,       // ref<string> — this peer's ID
+  conns,          // ref<DataConnection[]> — all active connections
+  connectedCount, // computed<number> — how many players are connected
+  log,            // ref<string[]> — event log for debugging
+  init,           // (onData) => void — creates the Peer, starts listening
+  send,           // (data) => void — broadcasts to all connected players
+  sendTo,         // (peerId, data) => void — sends to one specific player
+  disconnectAll,  // () => void
 }
 ```
 
-The GM and player versions differ slightly — the GM's `init` also listens for incoming connections, while the player's `init` accepts an `onReady` callback that fires once the peer ID is available (needed for auto-connect on load).
+---
+
+### Multiple simultaneous players
+
+```
+peer-pathfinder/
+├── shared/                        # Shared protocol package
+│   └── src/
+│       └── protocol.js            # Message types, factories, conditions list
+├── gm-app/                        # Game Master dashboard
+│   └── src/
+│       ├── composables/usePeer.js  # PeerJS logic — host side (multi-connection)
+│       ├── components/
+│       │   ├── ConnectionPanel.vue
+│       │   ├── AddCharacterPanel.vue
+│       │   └── CharacterCard.vue
+│       └── App.vue
+└── player-app/                    # Player view
+    └── src/
+        ├── composables/usePeer.js  # PeerJS logic — client side
+        ├── components/
+        │   └── CharacterRow.vue
+        └── App.vue
+```
+```
+
+The player count is exposed as a `computed` from the composable and shown live in the connection panel.
 
 ---
 
 ## Project structure
+return {
+  myPeerId,         // ref<string> — this peer's ID
+  connectionStatus, // ref<'disconnected'|'waiting'|'connected'>
+  statusMessage,    // ref<string> — human-readable status
+  log,              // ref<string[]> — event log for debugging
+  init,             // (onData, onReady?) => void
+  connectTo,        // (peerId, onData) => void
+  disconnect,       // () => void
+}
+```
+
+The key difference: the GM's `send` iterates over `conns` and calls `c.send(data)` on each one, while the player's `send` targets a single connection.
 
 ```
 peer-pathfinder/
@@ -269,7 +309,7 @@ Open the GM app first, then click "Open Player App". If both are in the same bro
 
 ---
 
-## Shared protocol package
+## Shared protocol package (Change from before)
 
 The message format between the two apps is defined once in `shared/src/protocol.js` and imported by both. Neither app hardcodes message type strings or constructs message objects by hand.
 
