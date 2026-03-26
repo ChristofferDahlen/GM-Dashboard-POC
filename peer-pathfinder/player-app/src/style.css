@@ -1,0 +1,11 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Georgia', serif; background: #0a0a1a; color: #c8d8f0; min-height: 100vh; padding: 20px; }
+h1 { color: #7ab0e0; border-bottom: 2px solid #7ab0e0; padding-bottom: 8px; margin-bottom: 20px; }
+h2 { color: #7ab0e0; margin-bottom: 12px; }
+.panel { background: #0f0f2a; border: 1px solid #7ab0e044; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+label { display: block; margin-bottom: 4px; font-size: 0.85rem; color: #7ab0e0; }
+input { width: 100%; padding: 6px 10px; background: #0a0a1a; border: 1px solid #7ab0e066; color: #c8d8f0; border-radius: 4px; margin-bottom: 10px; }
+button { padding: 8px 16px; background: #7ab0e0; color: #0a0a1a; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; margin-right: 8px; }
+button:hover { background: #a0c8f0; }
+button:disabled { background: #333; color: #666; cursor: not-allowed; }
+.peer-id { font-family: monospace; background: #050510; padding: 4px 8px; border-radius: 4px; font-size: 0.9rem; }

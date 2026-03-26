@@ -1,0 +1,15 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Georgia', serif; background: #1a0a00; color: #f0d9a0; min-height: 100vh; padding: 20px; }
+h1 { color: #c8a84b; border-bottom: 2px solid #c8a84b; padding-bottom: 8px; margin-bottom: 20px; }
+h2 { color: #c8a84b; margin-bottom: 12px; }
+.panel { background: #2a1500; border: 1px solid #c8a84b44; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+label { display: block; margin-bottom: 4px; font-size: 0.85rem; color: #c8a84b; }
+input, select { width: 100%; padding: 6px 10px; background: #1a0a00; border: 1px solid #c8a84b66; color: #f0d9a0; border-radius: 4px; margin-bottom: 10px; }
+button { padding: 8px 16px; background: #c8a84b; color: #1a0a00; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; margin-right: 8px; }
+button:hover { background: #e0c060; }
+button:disabled { background: #555; color: #999; cursor: not-allowed; }
+.peer-id { font-family: monospace; background: #0a0500; padding: 4px 8px; border-radius: 4px; font-size: 0.9rem; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+.hp-pair { display: flex; gap: 4px; }
+.hp-pair input { margin: 0; }
