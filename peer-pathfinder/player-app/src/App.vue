@@ -36,6 +36,14 @@ onMounted(() => {
     }
     if (gmPeerId.value) connectTo(gmPeerId.value, handleData)
   })
+
+  // If the GM restarts and gets a new Peer ID, reconnect automatically
+  window.addEventListener('storage', (e) => {
+    if (e.key !== 'gm-peer-id' || !e.newValue || e.newValue === gmPeerId.value) return
+    gmPeerId.value = e.newValue
+    disconnect()
+    connectTo(e.newValue, handleData)
+  })
 })
 
 function onConnect() {
